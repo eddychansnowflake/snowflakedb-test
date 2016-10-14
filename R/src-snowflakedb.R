@@ -261,7 +261,9 @@ db_insert_into.SnowflakeDBConnection <- function(con, table, values, ...) {
 
   # write the table out to a local tsv file
   tmp <- tempfile(fileext = ".tsv")
-  write.table(values, tmp, sep = "\t", quote = FALSE, row.names = FALSE, col.names = TRUE)
+  #write.table(values, tmp, sep = "\t", quote = FALSE, row.names = FALSE, col.names = TRUE)
+  # Updated by Eddy Chan (Snowflake SE)
+  write.table(values, tmp, sep = "\t", quote = TRUE, row.names = FALSE, col.names = TRUE)
 
   # put the tsv file to the Snowflake table stage
   sql <- sprintf("PUT 'file://%s' @%%\"%s\"", tmp, table)
@@ -270,7 +272,9 @@ db_insert_into.SnowflakeDBConnection <- function(con, table, values, ...) {
   if (rs["status"] != "UPLOADED") print(rs)
 
   # load the file from the table stage
-  sql <- dplyr::build_sql("COPY INTO ", ident(table), " FILE_FORMAT = (FIELD_DELIMITER = '\\t' SKIP_HEADER = 1 NULL_IF = 'NA')")
+  # Updated by Eddy Chan (Snowflake SE)
+  # sql <- dplyr::build_sql("COPY INTO ", ident(table), " FILE_FORMAT = (FIELD_DELIMITER = '\\t' SKIP_HEADER = 1 NULL_IF = 'NA')")
+  sql <- dplyr::build_sql("COPY INTO ", ident(table), " FILE_FORMAT = (FIELD_DELIMITER = '\\t' SKIP_HEADER = 1 NULL_IF = 'NA' ESCAPE_UNENCLOSED_FIELD = '\134' FIELD_OPTIONALLY_ENCLOSED_BY = '\042')")
   message(sql)
   rs <- dbGetQuery(con, sql)
   if (rs["errors_seen"] != "0") print(rs)
